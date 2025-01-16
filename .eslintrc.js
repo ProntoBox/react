@@ -303,7 +303,6 @@ module.exports = {
       ERROR,
       {isProductionUserAppCode: true},
     ],
-    'react-internal/no-to-warn-dev-within-to-throw': ERROR,
     'react-internal/warning-args': ERROR,
     'react-internal/no-production-logging': ERROR,
   },
@@ -330,6 +329,7 @@ module.exports = {
         'packages/react-server-dom-esm/**/*.js',
         'packages/react-server-dom-webpack/**/*.js',
         'packages/react-server-dom-turbopack/**/*.js',
+        'packages/react-server-dom-parcel/**/*.js',
         'packages/react-server-dom-fb/**/*.js',
         'packages/react-test-renderer/**/*.js',
         'packages/react-debug-tools/**/*.js',
@@ -482,6 +482,12 @@ module.exports = {
       },
     },
     {
+      files: ['packages/react-server-dom-parcel/**/*.js'],
+      globals: {
+        parcelRequire: 'readonly',
+      },
+    },
+    {
       files: ['packages/scheduler/**/*.js'],
       globals: {
         TaskController: 'readonly',
@@ -569,6 +575,7 @@ module.exports = {
     React$Node: 'readonly',
     React$Portal: 'readonly',
     React$Ref: 'readonly',
+    React$RefSetter: 'readonly',
     ReadableStreamController: 'readonly',
     ReadableStreamReader: 'readonly',
     RequestInfo: 'readonly',
@@ -582,6 +589,11 @@ module.exports = {
     WheelEventHandler: 'readonly',
     FinalizationRegistry: 'readonly',
     Omit: 'readonly',
+    Keyframe: 'readonly',
+    PropertyIndexedKeyframes: 'readonly',
+    KeyframeAnimationOptions: 'readonly',
+    GetAnimationsOptions: 'readonly',
+    Animatable: 'readonly',
 
     spyOnDev: 'readonly',
     spyOnDevAndProd: 'readonly',
