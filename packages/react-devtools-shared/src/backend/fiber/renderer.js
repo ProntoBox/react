@@ -27,6 +27,7 @@ import {
   ElementTypeSuspense,
   ElementTypeSuspenseList,
   ElementTypeTracingMarker,
+  ElementTypeViewTransition,
   ElementTypeVirtual,
   StrictMode,
 } from 'react-devtools-shared/src/frontend/types';
@@ -383,6 +384,7 @@ export function getInternalReactConstants(version: string): {
       // want to fork again so we're adding it here instead
       YieldComponent: -1, // Removed
       Throw: 29,
+      ViewTransitionComponent: 30, // Experimental
     };
   } else if (gte(version, '17.0.0-alpha')) {
     ReactTypeOfWork = {
@@ -418,6 +420,7 @@ export function getInternalReactConstants(version: string): {
       TracingMarkerComponent: -1, // Doesn't exist yet
       YieldComponent: -1, // Removed
       Throw: -1, // Doesn't exist yet
+      ViewTransitionComponent: -1, // Doesn't exist yet
     };
   } else if (gte(version, '16.6.0-beta.0')) {
     ReactTypeOfWork = {
@@ -453,6 +456,7 @@ export function getInternalReactConstants(version: string): {
       TracingMarkerComponent: -1, // Doesn't exist yet
       YieldComponent: -1, // Removed
       Throw: -1, // Doesn't exist yet
+      ViewTransitionComponent: -1, // Doesn't exist yet
     };
   } else if (gte(version, '16.4.3-alpha')) {
     ReactTypeOfWork = {
@@ -488,6 +492,7 @@ export function getInternalReactConstants(version: string): {
       TracingMarkerComponent: -1, // Doesn't exist yet
       YieldComponent: -1, // Removed
       Throw: -1, // Doesn't exist yet
+      ViewTransitionComponent: -1, // Doesn't exist yet
     };
   } else {
     ReactTypeOfWork = {
@@ -523,6 +528,7 @@ export function getInternalReactConstants(version: string): {
       TracingMarkerComponent: -1, // Doesn't exist yet
       YieldComponent: 9,
       Throw: -1, // Doesn't exist yet
+      ViewTransitionComponent: -1, // Doesn't exist yet
     };
   }
   // **********************************************************
@@ -565,6 +571,7 @@ export function getInternalReactConstants(version: string): {
     SuspenseListComponent,
     TracingMarkerComponent,
     Throw,
+    ViewTransitionComponent,
   } = ReactTypeOfWork;
 
   function resolveFiberType(type: any): $FlowFixMe {
@@ -599,6 +606,8 @@ export function getInternalReactConstants(version: string): {
       !shouldSkipForgetCheck &&
       // $FlowFixMe[incompatible-type] fiber.updateQueue is mixed
       (fiber.updateQueue?.memoCache != null ||
+        (Array.isArray(fiber.memoizedState?.memoizedState) &&
+          fiber.memoizedState.memoizedState[0]?.[REACT_MEMO_CACHE_SENTINEL]) ||
         fiber.memoizedState?.memoizedState?.[REACT_MEMO_CACHE_SENTINEL])
     ) {
       const displayNameWithoutForgetWrapper = getDisplayNameForFiber(
@@ -671,6 +680,8 @@ export function getInternalReactConstants(version: string): {
         return 'Profiler';
       case TracingMarkerComponent:
         return 'TracingMarker';
+      case ViewTransitionComponent:
+        return 'ViewTransition';
       case Throw:
         // This should really never be visible.
         return 'Error';
@@ -905,6 +916,7 @@ export function attach(
     SuspenseListComponent,
     TracingMarkerComponent,
     Throw,
+    ViewTransitionComponent,
   } = ReactTypeOfWork;
   const {
     ImmediatePriority,
@@ -1581,6 +1593,8 @@ export function attach(
         return ElementTypeSuspenseList;
       case TracingMarkerComponent:
         return ElementTypeTracingMarker;
+      case ViewTransitionComponent:
+        return ElementTypeViewTransition;
       default:
         const typeSymbol = getTypeSymbol(type);
 

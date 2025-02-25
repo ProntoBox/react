@@ -10,7 +10,6 @@
 import ReactVersion from 'shared/ReactVersion';
 import {
   REACT_FRAGMENT_TYPE,
-  REACT_DEBUG_TRACING_MODE_TYPE,
   REACT_PROFILER_TYPE,
   REACT_STRICT_MODE_TYPE,
   REACT_SUSPENSE_TYPE,
@@ -19,6 +18,7 @@ import {
   REACT_OFFSCREEN_TYPE,
   REACT_SCOPE_TYPE,
   REACT_TRACING_MARKER_TYPE,
+  REACT_VIEW_TRANSITION_TYPE,
 } from 'shared/ReactSymbols';
 
 import {Component, PureComponent} from './ReactBaseClasses';
@@ -38,7 +38,6 @@ import {postpone} from './ReactPostpone';
 import {
   getCacheForType,
   useCallback,
-  unstable_useContextWithBailout,
   useContext,
   useEffect,
   useEffectEvent,
@@ -58,12 +57,14 @@ import {
   use,
   useOptimistic,
   useActionState,
+  useSwipeTransition,
 } from './ReactHooks';
 import ReactSharedInternals from './ReactSharedInternalsClient';
 import {startTransition} from './ReactStartTransition';
+import {addTransitionType} from './ReactTransitionType';
 import {act} from './ReactAct';
 import {captureOwnerStack} from './ReactOwnerStack';
-import ReactCompilerRuntime from './ReactCompilerRuntime';
+import * as ReactCompilerRuntime from './ReactCompilerRuntime';
 
 const Children = {
   map,
@@ -85,7 +86,6 @@ export {
   cache,
   postpone as unstable_postpone,
   useCallback,
-  unstable_useContextWithBailout,
   useContext,
   useEffect,
   useEffectEvent as experimental_useEffectEvent,
@@ -103,7 +103,6 @@ export {
   REACT_FRAGMENT_TYPE as Fragment,
   REACT_PROFILER_TYPE as Profiler,
   REACT_STRICT_MODE_TYPE as StrictMode,
-  REACT_DEBUG_TRACING_MODE_TYPE as unstable_DebugTracingMode,
   REACT_SUSPENSE_TYPE as Suspense,
   createElement,
   cloneElement,
@@ -125,7 +124,13 @@ export {
   REACT_SCOPE_TYPE as unstable_Scope,
   // enableTransitionTracing
   REACT_TRACING_MARKER_TYPE as unstable_TracingMarker,
+  // enableViewTransition
+  REACT_VIEW_TRANSITION_TYPE as unstable_ViewTransition,
+  addTransitionType as unstable_addTransitionType,
+  // enableSwipeTransition
+  useSwipeTransition as unstable_useSwipeTransition,
+  // DEV-only
   useId,
-  act, // DEV-only
-  captureOwnerStack, // DEV-only
+  act,
+  captureOwnerStack,
 };

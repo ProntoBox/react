@@ -26,6 +26,8 @@ const bundleTypes = {
   RN_FB_PROD: 'RN_FB_PROD',
   RN_FB_PROFILING: 'RN_FB_PROFILING',
   BROWSER_SCRIPT: 'BROWSER_SCRIPT',
+  CJS_DTS: 'CJS_DTS',
+  ESM_DTS: 'ESM_DTS',
 };
 
 const {
@@ -47,6 +49,8 @@ const {
   RN_FB_PROD,
   RN_FB_PROFILING,
   BROWSER_SCRIPT,
+  CJS_DTS,
+  ESM_DTS,
 } = bundleTypes;
 
 const moduleTypes = {
@@ -621,6 +625,70 @@ const bundles = [
     externals: ['react', 'react-dom'],
   },
 
+  /******* React Server DOM Parcel Server *******/
+  {
+    bundleTypes: [NODE_DEV, NODE_PROD],
+    moduleType: RENDERER,
+    entry: 'react-server-dom-parcel/src/server/react-flight-dom-server.browser',
+    name: 'react-server-dom-parcel-server.browser',
+    condition: 'react-server',
+    global: 'ReactServerDOMServer',
+    minifyWithProdErrorCodes: false,
+    wrapWithModuleBoundaries: false,
+    externals: ['react', 'react-dom'],
+  },
+  {
+    bundleTypes: [NODE_DEV, NODE_PROD],
+    moduleType: RENDERER,
+    entry: 'react-server-dom-parcel/src/server/react-flight-dom-server.node',
+    name: 'react-server-dom-parcel-server.node',
+    condition: 'react-server',
+    global: 'ReactServerDOMServer',
+    minifyWithProdErrorCodes: false,
+    wrapWithModuleBoundaries: false,
+    externals: ['react', 'util', 'async_hooks', 'react-dom'],
+  },
+  {
+    bundleTypes: [NODE_DEV, NODE_PROD],
+    moduleType: RENDERER,
+    entry: 'react-server-dom-parcel/src/server/react-flight-dom-server.edge',
+    name: 'react-server-dom-parcel-server.edge',
+    condition: 'react-server',
+    global: 'ReactServerDOMServer',
+    minifyWithProdErrorCodes: false,
+    wrapWithModuleBoundaries: false,
+    externals: ['react', 'util', 'async_hooks', 'react-dom'],
+  },
+
+  /******* React Server DOM Parcel Client *******/
+  {
+    bundleTypes: [NODE_DEV, NODE_PROD],
+    moduleType: RENDERER,
+    entry: 'react-server-dom-parcel/client.browser',
+    global: 'ReactServerDOMClient',
+    minifyWithProdErrorCodes: false,
+    wrapWithModuleBoundaries: false,
+    externals: ['react', 'react-dom'],
+  },
+  {
+    bundleTypes: [NODE_DEV, NODE_PROD],
+    moduleType: RENDERER,
+    entry: 'react-server-dom-parcel/client.node',
+    global: 'ReactServerDOMClient',
+    minifyWithProdErrorCodes: false,
+    wrapWithModuleBoundaries: false,
+    externals: ['react', 'react-dom', 'util'],
+  },
+  {
+    bundleTypes: [NODE_DEV, NODE_PROD],
+    moduleType: RENDERER,
+    entry: 'react-server-dom-parcel/client.edge',
+    global: 'ReactServerDOMClient',
+    minifyWithProdErrorCodes: false,
+    wrapWithModuleBoundaries: false,
+    externals: ['react', 'react-dom'],
+  },
+
   /******* React Server DOM ESM Server *******/
   {
     bundleTypes: [NODE_DEV, NODE_PROD],
@@ -719,7 +787,9 @@ const bundles = [
     moduleType: RENDERER,
     entry: 'react-native-renderer',
     global: 'ReactNativeRenderer',
-    externals: ['react-native'],
+    // ReactNativeInternalFeatureFlags temporary until we land enableRemoveConsolePatches.
+    // Needs to be done before the next RN OSS release.
+    externals: ['react-native', 'ReactNativeInternalFeatureFlags'],
     minifyWithProdErrorCodes: false,
     wrapWithModuleBoundaries: true,
     babel: opts =>
@@ -753,7 +823,9 @@ const bundles = [
     moduleType: RENDERER,
     entry: 'react-native-renderer/fabric',
     global: 'ReactFabric',
-    externals: ['react-native'],
+    // ReactNativeInternalFeatureFlags temporary until we land enableRemoveConsolePatches.
+    // Needs to be done before the next RN OSS release.
+    externals: ['react-native', 'ReactNativeInternalFeatureFlags'],
     minifyWithProdErrorCodes: false,
     wrapWithModuleBoundaries: true,
     babel: opts =>
@@ -1112,17 +1184,19 @@ const bundles = [
 
   /******* ESLint Plugin for Hooks *******/
   {
-    // TODO: it's awkward to create a bundle for this but if we don't, the package
-    // won't get copied. We also can't create just DEV bundle because it contains a
-    // NODE_ENV check inside. We should probably tweak our build process to allow
-    // "raw" packages that don't get bundled.
-    bundleTypes: [NODE_DEV, NODE_PROD],
+    // TODO: we're building this from typescript source now, but there's really
+    // no reason to have both dev and prod for this package.  It's
+    // currently required in order for the package to be copied over correctly.
+    // So, it would be worth improving that flow.
+    name: 'eslint-plugin-react-hooks',
+    bundleTypes: [NODE_DEV, NODE_PROD, CJS_DTS],
     moduleType: ISOMORPHIC,
-    entry: 'eslint-plugin-react-hooks',
+    entry: 'eslint-plugin-react-hooks/src/index.ts',
     global: 'ESLintPluginReactHooks',
     minifyWithProdErrorCodes: false,
     wrapWithModuleBoundaries: false,
     externals: [],
+    tsconfig: './packages/eslint-plugin-react-hooks/tsconfig.json',
   },
 
   /******* React Fresh *******/
@@ -1202,6 +1276,9 @@ function getFilename(bundle, bundleType) {
       return `${globalName}-profiling.js`;
     case BROWSER_SCRIPT:
       return `${name}.js`;
+    case CJS_DTS:
+    case ESM_DTS:
+      return `${name}.d.ts`;
   }
 }
 

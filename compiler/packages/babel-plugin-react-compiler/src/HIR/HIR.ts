@@ -108,16 +108,7 @@ export type ReactiveValue =
   | ReactiveLogicalValue
   | ReactiveSequenceValue
   | ReactiveTernaryValue
-  | ReactiveOptionalCallValue
-  | ReactiveFunctionValue;
-
-export type ReactiveFunctionValue = {
-  kind: 'ReactiveFunctionValue';
-  fn: ReactiveFunction;
-  dependencies: Array<Place>;
-  returnType: t.FlowType | t.TSType | null;
-  loc: SourceLocation;
-};
+  | ReactiveOptionalCallValue;
 
 export type ReactiveLogicalValue = {
   kind: 'LogicalExpression';
@@ -722,7 +713,6 @@ export type ObjectProperty = {
 };
 
 export type LoweredFunction = {
-  dependencies: Array<Place>;
   func: HIRFunction;
 };
 
@@ -840,6 +830,11 @@ export type LoadLocal = {
   place: Place;
   loc: SourceLocation;
 };
+export type LoadContext = {
+  kind: 'LoadContext';
+  place: Place;
+  loc: SourceLocation;
+};
 
 /*
  * The value of a given instruction. Note that values are not recursive: complex
@@ -852,11 +847,7 @@ export type LoadLocal = {
 
 export type InstructionValue =
   | LoadLocal
-  | {
-      kind: 'LoadContext';
-      place: Place;
-      loc: SourceLocation;
-    }
+  | LoadContext
   | {
       kind: 'DeclareLocal';
       lvalue: LValue;
@@ -920,15 +911,7 @@ export type InstructionValue =
       type: Type;
       loc: SourceLocation;
     }
-  | {
-      kind: 'JsxExpression';
-      tag: Place | BuiltinTag;
-      props: Array<JsxAttribute>;
-      children: Array<Place> | null; // null === no children
-      loc: SourceLocation;
-      openingLoc: SourceLocation;
-      closingLoc: SourceLocation;
-    }
+  | JsxExpression
   | {
       kind: 'ObjectExpression';
       properties: Array<ObjectProperty | SpreadPattern>;
@@ -954,7 +937,7 @@ export type InstructionValue =
   | {
       kind: 'PropertyStore';
       object: Place;
-      property: string;
+      property: PropertyLiteral;
       value: Place;
       loc: SourceLocation;
     }
@@ -964,7 +947,7 @@ export type InstructionValue =
   | {
       kind: 'PropertyDelete';
       object: Place;
-      property: string;
+      property: PropertyLiteral;
       loc: SourceLocation;
     }
 
@@ -1074,6 +1057,16 @@ export type InstructionValue =
       loc: SourceLocation;
     };
 
+export type JsxExpression = {
+  kind: 'JsxExpression';
+  tag: Place | BuiltinTag;
+  props: Array<JsxAttribute>;
+  children: Array<Place> | null; // null === no children
+  loc: SourceLocation;
+  openingLoc: SourceLocation;
+  closingLoc: SourceLocation;
+};
+
 export type JsxAttribute =
   | {kind: 'JsxSpreadAttribute'; argument: Place}
   | {kind: 'JsxAttribute'; name: string; place: Place};
@@ -1128,7 +1121,7 @@ export type StoreLocal = {
 export type PropertyLoad = {
   kind: 'PropertyLoad';
   object: Place;
-  property: string;
+  property: PropertyLiteral;
   loc: SourceLocation;
 };
 
@@ -1238,6 +1231,17 @@ export function makeTemporaryIdentifier(
     scope: null,
     type: makeType(),
     loc,
+  };
+}
+
+export function forkTemporaryIdentifier(
+  id: IdentifierId,
+  source: Identifier,
+): Identifier {
+  return {
+    ...source,
+    mutableRange: {start: makeInstructionId(0), end: makeInstructionId(0)},
+    id,
   };
 }
 
@@ -1498,7 +1502,17 @@ export type ReactiveScopeDeclaration = {
   scope: ReactiveScope; // the scope in which the variable was originally declared
 };
 
-export type DependencyPathEntry = {property: string; optional: boolean};
+const opaquePropertyLiteral = Symbol();
+export type PropertyLiteral = (string | number) & {
+  [opaquePropertyLiteral]: 'PropertyLiteral';
+};
+export function makePropertyLiteral(value: string | number): PropertyLiteral {
+  return value as PropertyLiteral;
+}
+export type DependencyPathEntry = {
+  property: PropertyLiteral;
+  optional: boolean;
+};
 export type DependencyPath = Array<DependencyPathEntry>;
 export type ReactiveScopeDependency = {
   identifier: Identifier;
@@ -1629,6 +1643,10 @@ export function isPrimitiveType(id: Identifier): boolean {
 
 export function isArrayType(id: Identifier): boolean {
   return id.type.kind === 'Object' && id.type.shapeId === 'BuiltInArray';
+}
+
+export function isPropsType(id: Identifier): boolean {
+  return id.type.kind === 'Object' && id.type.shapeId === 'BuiltInProps';
 }
 
 export function isRefValueType(id: Identifier): boolean {

@@ -28,12 +28,12 @@ import {
 } from './ReactFiberLane';
 import {
   enableSuspenseCallback,
-  enableCache,
   enableProfilerCommitHooks,
   enableProfilerTimer,
   enableUpdaterTracking,
   enableTransitionTracing,
   disableLegacyMode,
+  enableSwipeTransition,
 } from 'shared/ReactFeatureFlags';
 import {initializeUpdateQueue} from './ReactFiberClassUpdateQueue';
 import {LegacyRoot, ConcurrentRoot} from './ReactRootTags';
@@ -62,7 +62,6 @@ function FiberRootNode(
   this.pendingChildren = null;
   this.current = null;
   this.pingCache = null;
-  this.finishedWork = null;
   this.timeoutHandle = noTimeout;
   this.cancelPendingCommit = null;
   this.context = null;
@@ -77,7 +76,6 @@ function FiberRootNode(
   this.pingedLanes = NoLanes;
   this.warmLanes = NoLanes;
   this.expiredLanes = NoLanes;
-  this.finishedLanes = NoLanes;
   this.errorRecoveryDisabledLanes = NoLanes;
   this.shellSuspendCounter = 0;
 
@@ -91,16 +89,18 @@ function FiberRootNode(
   this.onCaughtError = onCaughtError;
   this.onRecoverableError = onRecoverableError;
 
-  if (enableCache) {
-    this.pooledCache = null;
-    this.pooledCacheLanes = NoLanes;
-  }
+  this.pooledCache = null;
+  this.pooledCacheLanes = NoLanes;
 
   if (enableSuspenseCallback) {
     this.hydrationCallbacks = null;
   }
 
   this.formState = formState;
+
+  if (enableSwipeTransition) {
+    this.gestures = null;
+  }
 
   this.incompleteTransitions = new Map();
   if (enableTransitionTracing) {
@@ -196,33 +196,24 @@ export function createFiberRoot(
   root.current = uninitializedFiber;
   uninitializedFiber.stateNode = root;
 
-  if (enableCache) {
-    const initialCache = createCache();
-    retainCache(initialCache);
+  const initialCache = createCache();
+  retainCache(initialCache);
 
-    // The pooledCache is a fresh cache instance that is used temporarily
-    // for newly mounted boundaries during a render. In general, the
-    // pooledCache is always cleared from the root at the end of a render:
-    // it is either released when render commits, or moved to an Offscreen
-    // component if rendering suspends. Because the lifetime of the pooled
-    // cache is distinct from the main memoizedState.cache, it must be
-    // retained separately.
-    root.pooledCache = initialCache;
-    retainCache(initialCache);
-    const initialState: RootState = {
-      element: initialChildren,
-      isDehydrated: hydrate,
-      cache: initialCache,
-    };
-    uninitializedFiber.memoizedState = initialState;
-  } else {
-    const initialState: RootState = {
-      element: initialChildren,
-      isDehydrated: hydrate,
-      cache: (null: any), // not enabled yet
-    };
-    uninitializedFiber.memoizedState = initialState;
-  }
+  // The pooledCache is a fresh cache instance that is used temporarily
+  // for newly mounted boundaries during a render. In general, the
+  // pooledCache is always cleared from the root at the end of a render:
+  // it is either released when render commits, or moved to an Offscreen
+  // component if rendering suspends. Because the lifetime of the pooled
+  // cache is distinct from the main memoizedState.cache, it must be
+  // retained separately.
+  root.pooledCache = initialCache;
+  retainCache(initialCache);
+  const initialState: RootState = {
+    element: initialChildren,
+    isDehydrated: hydrate,
+    cache: initialCache,
+  };
+  uninitializedFiber.memoizedState = initialState;
 
   initializeUpdateQueue(uninitializedFiber);
 
